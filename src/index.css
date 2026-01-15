@@ -1,0 +1,6 @@
+/* Cleared to avoid conflicts with src/ui/index.css */
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
