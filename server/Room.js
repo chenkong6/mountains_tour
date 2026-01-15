@@ -99,6 +99,7 @@ export class Room {
 
         this.broadcastGameState();
         this.broadcastLobbyState(); // To update inProgress flag
+        console.log(`[Room ${this.roomId}] Game successfully started and broadcasted.`);
     }
 
     handleAction(socket, action) {
