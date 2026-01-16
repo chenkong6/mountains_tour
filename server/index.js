@@ -4,6 +4,7 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { leaderboardManager } from './leaderboardManager.js';
 import { Room } from './Room.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -29,13 +30,16 @@ const rooms = new Map(); // roomId -> Room instance
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
-    socket.on('join_room', ({ roomId, playerName }) => {
+    // Send current leaderboard on connection
+    socket.emit('leaderboard_update', leaderboardManager.get());
+
+    socket.on('join_room', ({ roomId, playerName, mode }) => {
         let room = rooms.get(roomId);
         if (!room) {
             room = new Room(io, roomId);
             rooms.set(roomId, room);
         }
-        room.join(socket, playerName);
+        room.join(socket, playerName, mode);
         socket.data.roomId = roomId;
     });
 

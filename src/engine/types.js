@@ -3,6 +3,11 @@
  * @description Game constants and type definitions for Incan Gold (Indiamant).
  */
 
+export const GAME_MODES = {
+  REFRESH: 'REFRESH',     // Normal: Fresh deck every round
+  PERSISTENT: 'PERSISTENT' // Hardcore: Remove disaster cards permanently
+};
+
 export const CARD_TYPES = {
   TREASURE: 'TREASURE',
   HAZARD: 'HAZARD',
@@ -49,6 +54,11 @@ export const DECK_CONFIG = {
   ],
   HAZARDS_PER_TYPE: 3, // Standard is 3 per type in deck? User said 6 per type!
   // User: "30 张，5 种灾难各 6 张" -> OK.
-  ARTIFACT_VALUES: [5, 5, 5, 10, 10], // Often first 3 are 5, last 2 are 10. Or 5,7,8,10,12..
-  // User didn't specify artifact values, just "Value different".
+  ARTIFACT_VALUES: [
+    5, // R1
+    7, 7, // R2
+    8, 8, 8, // R3
+    10, 10, 10, 10, // R4
+    12, 12, 12, 12, 15 // R5
+  ],
 };

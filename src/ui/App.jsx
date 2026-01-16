@@ -12,6 +12,7 @@ function App() {
   const [inLobby, setInLobby] = useState(true);
   const [lobbyState, setLobbyState] = useState(null); // { players, inProgress ... }
   const [gameState, setGameState] = useState(null);
+  const [leaderboard, setLeaderboard] = useState([]);
   const [myInfo, setMyInfo] = useState({ name: '', roomId: '', isHost: false, id: null }); // id is gameId
 
   useEffect(() => {
@@ -19,13 +20,16 @@ function App() {
 
     function onConnect() {
       setIsConnected(true);
+      console.log('Socket connected:', socket.id);
     }
 
     function onDisconnect() {
       setIsConnected(false);
+      console.log('Socket disconnected');
     }
 
     function onLobbyState(state) {
+      console.log('Lobby state received:', state);
       setLobbyState(state);
       // If game started, switch to game view
       if (state.inProgress) {
@@ -42,11 +46,17 @@ function App() {
       alert(msg);
     }
 
+    function onLeaderboardUpdate(data) {
+      console.log('Leaderboard update received:', data);
+      setLeaderboard(data);
+    }
+
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
     socket.on('lobby_state', onLobbyState);
     socket.on('game_state', onGameState);
     socket.on('error_message', onErrorMessage);
+    socket.on('leaderboard_update', onLeaderboardUpdate);
 
     return () => {
       socket.off('connect', onConnect);
@@ -54,6 +64,7 @@ function App() {
       socket.off('lobby_state', onLobbyState);
       socket.off('game_state', onGameState);
       socket.off('error_message', onErrorMessage);
+      socket.off('leaderboard_update', onLeaderboardUpdate);
       socket.disconnect();
     };
   }, []);
@@ -79,15 +90,44 @@ function App() {
 
   if (inLobby || !gameState) {
     if (!lobbyState || !myInfo.roomId) {
-      return <Lobby socket={socket} onJoin={handleJoin} />;
+      return (
+        <Lobby
+          socket={socket}
+          onJoin={handleJoin}
+          gameMode={lobbyState?.gameMode}
+          leaderboard={leaderboard}
+        />
+      );
     } else {
       // Inside Lobby Waiting Room
       return (
         <div className="overlay">
           <div className="modal" style={{ maxWidth: '400px' }}>
             <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>备战室</h1>
-            <div className="status-tag ready" style={{ fontSize: '1.2rem', padding: '10px 20px', marginBottom: '20px' }}>
+            <div className="status-tag ready" style={{ fontSize: '1.2rem', padding: '10px 20px', marginBottom: '10px' }}>
               房间 ID: {myInfo.roomId}
+            </div>
+
+            <div style={{ marginBottom: '20px', background: 'rgba(255,255,255,0.05)', padding: '15px', borderRadius: '12px' }}>
+              <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '8px' }}>当前模式：<span style={{ color: '#fbbf24', fontWeight: 'bold' }}>{lobbyState.gameMode === 'PERSISTENT' ? '硬核 (持久)' : '常规 (刷新)'}</span></div>
+              {lobbyState.hostSocketId === socket.id && (
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    className={`btn-secondary ${lobbyState.gameMode === 'REFRESH' ? 'active-mode' : ''}`}
+                    style={{ flex: 1, fontSize: '0.7rem', padding: '4px', border: lobbyState.gameMode === 'REFRESH' ? '1px solid #fbbf24' : '1px solid transparent' }}
+                    onClick={() => socket.emit('game_action', { type: 'SET_GAME_MODE', mode: 'REFRESH' })}
+                  >
+                    常规
+                  </button>
+                  <button
+                    className={`btn-secondary ${lobbyState.gameMode === 'PERSISTENT' ? 'active-mode' : ''}`}
+                    style={{ flex: 1, fontSize: '0.7rem', padding: '4px', border: lobbyState.gameMode === 'PERSISTENT' ? '1px solid #fbbf24' : '1px solid transparent' }}
+                    onClick={() => socket.emit('game_action', { type: 'SET_GAME_MODE', mode: 'PERSISTENT' })}
+                  >
+                    硬核
+                  </button>
+                </div>
+              )}
             </div>
 
             <div style={{ background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '16px', marginBottom: '20px' }}>
@@ -110,7 +150,7 @@ function App() {
               </ul>
             </div>
 
-            {myInfo.isHost ? (
+            {lobbyState.hostSocketId === socket.id ? (
               <button className="btn-gold" style={{ width: '100%' }} onClick={handleStartGame}>开启探险</button>
             ) : (
               <div className="status-tag waiting" style={{ width: '100%', padding: '15px' }}>

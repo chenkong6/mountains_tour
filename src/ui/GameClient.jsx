@@ -50,6 +50,33 @@ const GameClient = ({ socket, gameState, myPlayerId }) => {
                 <div>
                     <h2>第 {gameState.round} / 5 轮</h2>
                 </div>
+
+                {/* Card Counter - NEW */}
+                <div className="deck-stats" style={{ display: 'flex', gap: '15px', background: 'rgba(0,0,0,0.3)', padding: '10px 20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <div title="宝藏卡剩余数量" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <span>💎</span>
+                        <span style={{ fontWeight: 'bold', color: '#fbbf24' }}>
+                            {gameState.deck.filter(c => c.type === 'TREASURE').length}
+                        </span>
+                    </div>
+                    <div title="神器卡剩余数量" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <span>🗿</span>
+                        <span style={{ fontWeight: 'bold', color: '#94a3b8' }}>
+                            {gameState.deck.filter(c => c.type === 'ARTIFACT').length}
+                        </span>
+                    </div>
+                    <div title="灾难卡剩余数量" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <span>⚠️</span>
+                        <span style={{ fontWeight: 'bold', color: '#ef4444' }}>
+                            {gameState.deck.filter(c => c.type === 'HAZARD').length}
+                        </span>
+                    </div>
+                    <div style={{ marginLeft: '10px', paddingLeft: '10px', borderLeft: '1px solid rgba(255,255,255,0.2)' }}>
+                        <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>总计: </span>
+                        <span style={{ fontWeight: 'bold' }}>{gameState.deck.length}</span>
+                    </div>
+                </div>
+
                 <div>
                     <h3>{me ? `当前探险者：${me.name}` : '观战中'}</h3>
                 </div>
@@ -115,59 +142,99 @@ const GameClient = ({ socket, gameState, myPlayerId }) => {
             {/* Round Start / Ready Check Overlay */}
             {gameState.phase === GAME_PHASES.ROUND_START && (
                 <div className="overlay" style={{ background: 'rgba(0,0,0,0.95)' }}>
-                    <div className="modal" style={{ width: '700px', maxHeight: '90vh', overflowY: 'auto' }}>
-                        <h2>第 {gameState.round - 1} 轮总结</h2>
+                    <div className="modal" style={{ width: '750px', maxHeight: '95vh', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.2)', boxShadow: '0 0 50px rgba(0,0,0,0.5)' }}>
+                        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+                            <h2 style={{ fontSize: '2.5rem', marginBottom: '5px' }}>第 {gameState.round - 1} 轮总结</h2>
+                            {gameState.currentRoundEndReason?.type === 'DISASTER' ? (
+                                <div style={{ color: '#ef4444', fontSize: '1.2rem', fontWeight: 'bold', background: 'rgba(239, 68, 68, 0.1)', padding: '10px', borderRadius: '8px', display: 'inline-block' }}>
+                                    ⚠️ 遭遇灾难：{gameState.currentRoundEndReason.hazard.label}！
+                                </div>
+                            ) : (
+                                <div style={{ color: '#10b981', fontSize: '1.2rem', fontWeight: 'bold', background: 'rgba(16, 185, 129, 0.1)', padding: '10px', borderRadius: '8px', display: 'inline-block' }}>
+                                    ✅ 探险圆满结束
+                                </div>
+                            )}
+                        </div>
 
                         {/* Round Summary Table */}
-                        <div style={{ marginBottom: '20px', background: '#334155', borderRadius: '8px', padding: '10px' }}>
+                        <div style={{ marginBottom: '30px', background: 'rgba(51, 65, 85, 0.5)', borderRadius: '16px', padding: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
                             <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
                                 <thead>
-                                    <tr style={{ borderBottom: '1px solid #475569' }}>
-                                        <th style={{ padding: '8px' }}>探险者</th>
-                                        <th style={{ padding: '8px' }}>宝石总计 💎</th>
-                                        <th style={{ padding: '8px' }}>神器 🗿</th>
+                                    <tr style={{ borderBottom: '2px solid rgba(255,255,255,0.1)', color: '#94a3b8', fontSize: '0.9rem' }}>
+                                        <th style={{ padding: '12px' }}>探险者</th>
+                                        <th style={{ padding: '12px' }}>本轮宝石 💎</th>
+                                        <th style={{ padding: '12px' }}>本轮神器 🗿</th>
+                                        <th style={{ padding: '12px' }}>状态</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {(gameState.lastRoundResults || []).map((p, i) => (
-                                        <tr key={i} style={{ borderBottom: '1px solid #475569' }}>
-                                            <td style={{ padding: '8px' }}>{p.name} {p.status === 'OUT' ? '⛺' : '💀'}</td>
-                                            <td style={{ padding: '8px' }}>{p.totalGems}</td>
-                                            <td style={{ padding: '8px' }}>{p.artifactsCount}</td>
+                                        <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', height: '60px' }}>
+                                            <td style={{ padding: '12px', fontWeight: 'bold' }}>{p.name}</td>
+                                            <td style={{ padding: '12px', color: '#fbbf24', fontSize: '1.2rem', fontWeight: 'bold' }}>+{p.gemsGained}</td>
+                                            <td style={{ padding: '12px', color: '#f59e0b', fontSize: '1.1rem' }}>{p.artifactsGained > 0 ? `🗿 x${p.artifactsGained}` : '-'}</td>
+                                            <td style={{ padding: '12px' }}>
+                                                {p.status === 'SAFE' ? (
+                                                    <span style={{ color: '#10b981', padding: '4px 10px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.1)', fontSize: '0.85rem' }}>🏡 安全撤离</span>
+                                                ) : (
+                                                    <span style={{ color: '#ef4444', padding: '4px 10px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.1)', fontSize: '0.85rem' }}>💀 遇险丧命</span>
+                                                )}
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                         </div>
 
-                        <h3>准备迎接第 {gameState.round} 轮</h3>
-                        <p style={{ marginBottom: '10px' }}>等待所有探险者准备就绪...</p>
-
-                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '20px' }}>
-                            {gameState.players.map(p => {
-                                const isReady = (gameState.readyPlayerIds || []).includes(p.id);
-                                return (
-                                    <div key={p.id} className="player-ready-tag" style={{
-                                        padding: '8px 15px',
-                                        borderRadius: '20px',
-                                        background: isReady ? '#065f46' : '#475569',
-                                        border: isReady ? '2px solid #10b981' : '2px solid transparent',
-                                        display: 'flex', alignItems: 'center', gap: '5px'
-                                    }}>
-                                        <span>{p.name}</span>
-                                        <span>{isReady ? '✓' : '...'}</span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                        {!(gameState.readyPlayerIds || []).includes(myPlayerId) ? (
-                            <button className="btn-gold" style={{ width: '100%', padding: '15px' }} onClick={() => socket.emit('game_action', { type: 'PLAYER_READY' })}>
-                                我准备好了！
-                            </button>
-                        ) : (
-                            <div style={{ color: '#10b981', fontWeight: 'bold' }}>你已准备就绪。等待其他探险者...</div>
+                        {/* Hardcore Mode Special Notification */}
+                        {gameState.gameMode === 'PERSISTENT' && gameState.currentRoundEndReason?.type === 'DISASTER' && (
+                            <div style={{
+                                marginBottom: '30px',
+                                padding: '15px',
+                                background: 'linear-gradient(90deg, rgba(239, 68, 68, 0.2), rgba(0,0,0,0))',
+                                borderRadius: '10px',
+                                borderLeft: '4px solid #ef4444'
+                            }}>
+                                <h4 style={{ margin: '0 0 5px 0', color: '#ef4444' }}>💥 强力余震</h4>
+                                <p style={{ margin: 0, fontSize: '0.9rem', color: '#cbd5e1' }}>
+                                    由于发生了灾难，一张 <b>{gameState.currentRoundEndReason.hazard.label}</b> 卡牌已被永久从探险队中移除。
+                                    山脉现在变得稍微安全了一些。
+                                </p>
+                            </div>
                         )}
+
+                        <div style={{ textAlign: 'center' }}>
+                            <h3 style={{ marginBottom: '15px' }}>准备迎接第 {gameState.round} 轮</h3>
+                            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '25px' }}>
+                                {gameState.players.map(p => {
+                                    const isReady = (gameState.readyPlayerIds || []).includes(p.id);
+                                    return (
+                                        <div key={p.id} className="player-ready-tag" style={{
+                                            padding: '8px 15px',
+                                            borderRadius: '20px',
+                                            background: isReady ? 'rgba(16, 185, 129, 0.2)' : 'rgba(71, 85, 105, 0.2)',
+                                            border: isReady ? '2px solid #10b981' : '2px solid rgba(255,255,255,0.1)',
+                                            color: isReady ? '#10b981' : '#94a3b8',
+                                            display: 'flex', alignItems: 'center', gap: '8px',
+                                            transition: 'all 0.3s'
+                                        }}>
+                                            <span>{p.name}</span>
+                                            {isReady && <span>✓</span>}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {!(gameState.readyPlayerIds || []).includes(myPlayerId) ? (
+                                <button className="btn-gold" style={{ width: '100%', padding: '15px', fontSize: '1.2rem' }} onClick={() => socket.emit('game_action', { type: 'PLAYER_READY' })}>
+                                    我已经准备好再次出发了！ 🔦
+                                </button>
+                            ) : (
+                                <div style={{ color: '#10b981', fontWeight: 'bold', fontSize: '1.1rem', padding: '15px', border: '2px dashed #10b981', borderRadius: '12px' }}>
+                                    ⏳ 你已就绪。正在等待其他探险者集结...
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
