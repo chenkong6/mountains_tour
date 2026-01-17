@@ -95,73 +95,73 @@ const Lobby = ({ socket, onJoin, gameMode, leaderboard }) => {
                         <button className="btn-secondary" style={{ width: '100%' }} onClick={handleJoin}>加入探险队</button>
                     </div>
                 </div>
-            </div>
-            {/* Leaderboard Section */}
-            <div className="leaderboard" style={{
-                marginTop: '40px',
-                background: 'rgba(51, 65, 85, 0.4)',
-                borderRadius: '16px',
-                padding: '24px',
-                border: '1px solid rgba(251, 191, 36, 0.1)',
-                backdropFilter: 'blur(10px)'
-            }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                    <div style={{ fontSize: '1.8rem' }}>🏆</div>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#fbbf24', margin: 0 }}>探险荣誉榜 (TOP 10)</h2>
-                </div>
 
-                {!leaderboard || leaderboard.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '30px', color: '#94a3b8', fontStyle: 'italic' }}>
-                        虚位以待，期待首位传奇探险者的诞生...
+                {/* Leaderboard Section - Moved to Bottom */}
+                <div className="leaderboard" style={{
+                    marginTop: '40px',
+                    background: 'rgba(0, 0, 0, 0.2)',
+                    borderRadius: '16px',
+                    padding: '24px',
+                    border: '1px solid rgba(251, 191, 36, 0.1)',
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                        <div style={{ fontSize: '1.8rem' }}>🏆</div>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#fbbf24', margin: 0 }}>探险荣誉榜 (TOP 10)</h2>
                     </div>
-                ) : (
-                    <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
-                            <thead>
-                                <tr style={{ borderBottom: '2px solid rgba(255,255,255,0.1)', color: '#94a3b8', fontSize: '0.85rem' }}>
-                                    <th style={{ padding: '12px 10px' }}>排行</th>
-                                    <th style={{ padding: '12px 10px' }}>探险家</th>
-                                    <th style={{ padding: '12px 10px', textAlign: 'right' }}>财富总值 (💎+🗿)</th>
-                                    <th style={{ padding: '12px 10px', textAlign: 'right' }}>登榜时间</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {leaderboard.map((entry, index) => (
-                                    <tr key={index} style={{
-                                        borderBottom: '1px solid rgba(255,255,255,0.05)',
-                                        background: index === 0 ? 'rgba(251, 191, 36, 0.05)' : 'transparent'
-                                    }}>
-                                        <td style={{ padding: '15px 10px' }}>
-                                            <span style={{
-                                                display: 'inline-block',
-                                                width: '24px',
-                                                height: '24px',
-                                                lineHeight: '24px',
-                                                textAlign: 'center',
-                                                borderRadius: '50%',
-                                                background: index === 0 ? '#fbbf24' : index === 1 ? '#cbd5e1' : index === 2 ? '#b45309' : 'rgba(255,255,255,0.1)',
-                                                color: index <= 2 ? '#1e293b' : '#94a3b8',
-                                                fontWeight: 'bold',
-                                                fontSize: '0.8rem'
-                                            }}>
-                                                {index + 1}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: '15px 10px', fontWeight: 'bold', color: index === 0 ? '#fbbf24' : '#f8fafc' }}>
-                                            {entry.name}
-                                        </td>
-                                        <td style={{ padding: '15px 10px', textAlign: 'right', color: '#fbbf24', fontSize: '1.2rem', fontWeight: 'bold' }}>
-                                            {entry.score}
-                                        </td>
-                                        <td style={{ padding: '15px 10px', textAlign: 'right', fontSize: '0.8rem', color: '#64748b' }}>
-                                            {entry.timestamp}
-                                        </td>
+
+                    {!leaderboard || leaderboard.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '30px', color: '#94a3b8', fontStyle: 'italic' }}>
+                            虚位以待，期待首位传奇探险者的诞生...
+                        </div>
+                    ) : (
+                        <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+                                <thead>
+                                    <tr style={{ borderBottom: '2px solid rgba(255,255,255,0.1)', color: '#94a3b8', fontSize: '0.85rem' }}>
+                                        <th style={{ padding: '12px 10px' }}>排行</th>
+                                        <th style={{ padding: '12px 10px' }}>探险家</th>
+                                        <th style={{ padding: '12px 10px', textAlign: 'right' }}>财富总值 (💎+🗿)</th>
+                                        <th style={{ padding: '12px 10px', textAlign: 'right' }}>登榜时间</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+                                </thead>
+                                <tbody>
+                                    {leaderboard.map((entry, index) => (
+                                        <tr key={index} style={{
+                                            borderBottom: '1px solid rgba(255,255,255,0.05)',
+                                            background: index === 0 ? 'rgba(251, 191, 36, 0.05)' : 'transparent'
+                                        }}>
+                                            <td style={{ padding: '15px 10px' }}>
+                                                <span style={{
+                                                    display: 'inline-block',
+                                                    width: '24px',
+                                                    height: '24px',
+                                                    lineHeight: '24px',
+                                                    textAlign: 'center',
+                                                    borderRadius: '50%',
+                                                    background: index === 0 ? '#fbbf24' : index === 1 ? '#cbd5e1' : index === 2 ? '#b45309' : 'rgba(255,255,255,0.1)',
+                                                    color: index <= 2 ? '#1e293b' : '#94a3b8',
+                                                    fontWeight: 'bold',
+                                                    fontSize: '0.8rem'
+                                                }}>
+                                                    {index + 1}
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: '15px 10px', fontWeight: 'bold', color: index === 0 ? '#fbbf24' : '#f8fafc' }}>
+                                                {entry.name}
+                                            </td>
+                                            <td style={{ padding: '15px 10px', textAlign: 'right', color: '#fbbf24', fontSize: '1.2rem', fontWeight: 'bold' }}>
+                                                {entry.score}
+                                            </td>
+                                            <td style={{ padding: '15px 10px', textAlign: 'right', fontSize: '0.8rem', color: '#64748b' }}>
+                                                {entry.timestamp}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
