@@ -21,3 +21,6 @@ yarn-error.log*
 # OS
 .DS_Store
 Thumbs.db
+
+# Runtime Data (should not be tracked by git)
+server/leaderboard.json

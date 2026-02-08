@@ -12,8 +12,21 @@ function App() {
   const [inLobby, setInLobby] = useState(true);
   const [lobbyState, setLobbyState] = useState(null); // { players, inProgress ... }
   const [gameState, setGameState] = useState(null);
+  const [activeSession, setActiveSession] = useState(null); // { roomId, playerName }
   const [leaderboard, setLeaderboard] = useState([]);
-  const [myInfo, setMyInfo] = useState({ name: '', roomId: '', isHost: false, id: null }); // id is gameId
+  const [myInfo, setMyInfo] = useState(() => {
+    // Try to load from localStorage for reconnection
+    const saved = localStorage.getItem('mountain_tour_user');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    return { name: '', roomId: '', isHost: false, id: null, userId: `U-${Math.random().toString(36).substring(2, 9)}` };
+  });
+
+  useEffect(() => {
+    // Save myInfo to localStorage whenever it changes
+    localStorage.setItem('mountain_tour_user', JSON.stringify(myInfo));
+  }, [myInfo]);
 
   useEffect(() => {
     socket.connect();
@@ -21,6 +34,15 @@ function App() {
     function onConnect() {
       setIsConnected(true);
       console.log('Socket connected:', socket.id);
+
+
+      // Check for active session instead of auto-joining
+      if (myInfo.roomId && myInfo.userId) {
+        socket.emit('check_session', {
+          roomId: myInfo.roomId,
+          userId: myInfo.userId
+        });
+      }
     }
 
     function onDisconnect() {
@@ -44,11 +66,29 @@ function App() {
 
     function onErrorMessage(msg) {
       alert(msg);
+      // If error, maybe clear room to allow joining another
+      if (msg.includes('不存在') || msg.includes('开始')) {
+        setMyInfo(prev => ({ ...prev, roomId: '' }));
+      }
     }
+
 
     function onLeaderboardUpdate(data) {
       console.log('Leaderboard update received:', data);
       setLeaderboard(data);
+    }
+
+    function onSessionStatus(status) {
+      console.log('Session status received:', status);
+      if (status.active) {
+        setActiveSession({
+          roomId: status.roomId,
+          playerName: status.playerName,
+          inProgress: status.inProgress
+        });
+      } else {
+        setActiveSession(null);
+      }
     }
 
     socket.on('connect', onConnect);
@@ -57,6 +97,7 @@ function App() {
     socket.on('game_state', onGameState);
     socket.on('error_message', onErrorMessage);
     socket.on('leaderboard_update', onLeaderboardUpdate);
+    socket.on('session_status', onSessionStatus);
 
     return () => {
       socket.off('connect', onConnect);
@@ -65,6 +106,7 @@ function App() {
       socket.off('game_state', onGameState);
       socket.off('error_message', onErrorMessage);
       socket.off('leaderboard_update', onLeaderboardUpdate);
+      socket.off('session_status', onSessionStatus);
       socket.disconnect();
     };
   }, []);
@@ -81,11 +123,22 @@ function App() {
 
 
   const handleJoin = (roomId, name, isHost) => {
-    setMyInfo({ roomId, name, isHost, id: null });
+    setMyInfo(prev => ({ ...prev, roomId, name, isHost, id: null }));
   };
 
   const handleStartGame = () => {
     socket.emit('start_game');
+  };
+
+  const clearSession = () => {
+    setMyInfo(prev => {
+      const newState = { ...prev, roomId: '', id: null, isHost: false };
+      localStorage.setItem('mountain_tour_user', JSON.stringify(newState));
+      return newState;
+    });
+    setLobbyState(null);
+    setGameState(null);
+    setInLobby(true);
   };
 
   if (inLobby || !gameState) {
@@ -96,6 +149,8 @@ function App() {
           onJoin={handleJoin}
           gameMode={lobbyState?.gameMode}
           leaderboard={leaderboard}
+          myInfo={myInfo}
+          activeSession={activeSession}
         />
       );
     } else {
@@ -104,6 +159,26 @@ function App() {
         <div className="overlay">
           <div className="modal" style={{ maxWidth: '400px' }}>
             <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>备战室</h1>
+
+            <button
+              onClick={() => {
+                localStorage.removeItem('mountain_tour_user');
+                window.location.reload();
+              }}
+              style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '0.6rem', padding: '5px' }}
+              className="btn-secondary"
+            >
+              换个身份
+            </button>
+
+            <button
+              onClick={clearSession}
+              style={{ position: 'absolute', top: '10px', left: '10px', fontSize: '0.6rem', padding: '5px' }}
+              className="btn-secondary"
+            >
+              ← 返回大厅
+            </button>
+
             <div className="status-tag ready" style={{ fontSize: '1.2rem', padding: '10px 20px', marginBottom: '10px' }}>
               房间 ID: {myInfo.roomId}
             </div>
@@ -168,6 +243,7 @@ function App() {
       socket={socket}
       gameState={gameState}
       myPlayerId={myInfo.id}
+      onReturnToLobby={clearSession}
     />
   );
 }

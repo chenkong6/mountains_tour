@@ -33,14 +33,31 @@ io.on('connection', (socket) => {
     // Send current leaderboard on connection
     socket.emit('leaderboard_update', leaderboardManager.get());
 
-    socket.on('join_room', ({ roomId, playerName, mode }) => {
+    socket.on('join_room', ({ roomId, playerName, mode, userId }) => {
         let room = rooms.get(roomId);
         if (!room) {
             room = new Room(io, roomId);
             rooms.set(roomId, room);
         }
-        room.join(socket, playerName, mode);
+        room.join(socket, playerName, mode, userId);
         socket.data.roomId = roomId;
+    });
+
+    socket.on('check_session', ({ roomId, userId }) => {
+        const room = rooms.get(roomId);
+        if (room) {
+            const player = room.players.find(p => p.userId === userId);
+            if (player) {
+                socket.emit('session_status', {
+                    active: true,
+                    roomId,
+                    playerName: player.name,
+                    inProgress: room.inProgress
+                });
+                return;
+            }
+        }
+        socket.emit('session_status', { active: false });
     });
 
     socket.on('start_game', () => {

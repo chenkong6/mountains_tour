@@ -3,7 +3,7 @@ import { GAME_PHASES } from '../engine/types';
 import Card from './components/Card';
 import PlayerDashboard from './components/PlayerDashboard';
 
-const GameClient = ({ socket, gameState, myPlayerId }) => {
+const GameClient = ({ socket, gameState, myPlayerId, onReturnToLobby }) => {
     // gameState is fully synced from server
     // myPlayerId is the gameId (0, 1, 2...) OR socketId? 
     // Server Room.js stores: players: [{ socketId, name, id }]
@@ -82,7 +82,14 @@ const GameClient = ({ socket, gameState, myPlayerId }) => {
                 </div>
             </header>
 
-            {/* Game Board */}
+            {/* Player Dashboard (Now Row 2) */}
+            <PlayerDashboard
+                players={gameState.players}
+                currentDecisionMaker={null}
+                decidedPlayerIds={gameState.decidedPlayerIds || []}
+            />
+
+            {/* Game Board (Now Row 3) */}
             <main className="game-board">
                 {gameState.path.map((card, idx) => (
                     <div key={card.id || idx} style={{ position: 'relative' }}>
@@ -98,23 +105,19 @@ const GameClient = ({ socket, gameState, myPlayerId }) => {
 
                 {/* Floating Action Button for Decision (Only if IN and DECISION phase) */}
                 {gameState.phase === GAME_PHASES.DECISION && me && me.status === 'IN' && !isDecisionModalOpen && (
-                    <div style={{ position: 'fixed', bottom: '260px', left: '50%', transform: 'translateX(-50%)', zIndex: 50 }}>
-                        <button className="btn-gold" onClick={() => setIsDecisionModalOpen(true)}>
+                    <div style={{ position: 'fixed', bottom: '30px', left: '50%', transform: 'translateX(-50%)', zIndex: 1001 }}>
+                        <button className="btn-gold" onClick={() => setIsDecisionModalOpen(true)} style={{ boxShadow: '0 0 30px rgba(245, 158, 11, 0.4)', padding: '15px 40px', fontSize: '1.2rem' }}>
                             {myDecision ? '抉择已锁定 ✓' : '做出决定 ⛺/🔦'}
                         </button>
                     </div>
                 )}
             </main>
 
-            {/* Log */}
-            <div className="log-container">
-                {gameState.log.slice(-10).map((l, i) => <div key={i}>{l}</div>)}
+            {/* Log (Floating or positioned) */}
+            <div className="log-container" style={{ position: 'fixed', bottom: '120px', right: '20px', maxWidth: '350px', background: 'rgba(15, 23, 42, 0.9)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.1)', maxHeight: '200px', overflowY: 'auto', zIndex: 900, fontSize: '0.85rem' }}>
+                {gameState.log.slice(-10).map((l, i) => <div key={i} style={{ marginBottom: '8px', padding: '5px', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>{l}</div>)}
             </div>
 
-            {/* Player Dashboard */}
-            <section>
-                <PlayerDashboard players={gameState.players} currentDecisionMaker={null} />
-            </section>
 
             {/* Decision Overlay */}
             {gameState.phase === GAME_PHASES.DECISION && me && me.status === 'IN' && isDecisionModalOpen && (
@@ -270,7 +273,7 @@ const GameClient = ({ socket, gameState, myPlayerId }) => {
                             </table>
                         </div>
 
-                        <button className="btn-primary" onClick={() => window.location.reload()}>返回大厅</button>
+                        <button className="btn-primary" onClick={onReturnToLobby}>返回大厅</button>
                     </div>
                 </div>
             )}

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
-const Lobby = ({ socket, onJoin, gameMode, leaderboard }) => {
-    const [name, setName] = useState('');
+const Lobby = ({ socket, onJoin, gameMode, leaderboard, myInfo, activeSession }) => {
+    const [name, setName] = useState(myInfo?.name || '');
     const [roomId, setRoomId] = useState('');
     const [error, setError] = useState('');
     const [selectedMode, setSelectedMode] = useState('REFRESH');
@@ -9,21 +9,38 @@ const Lobby = ({ socket, onJoin, gameMode, leaderboard }) => {
     const handleCreate = () => {
         if (!name) { setError('请输入您的名字'); return; }
         const newRoomId = Math.random().toString(36).substring(2, 7).toUpperCase();
-        socket.emit('join_room', { roomId: newRoomId, playerName: name, mode: selectedMode });
+        socket.emit('join_room', {
+            roomId: newRoomId,
+            playerName: name,
+            mode: selectedMode,
+            userId: myInfo.userId
+        });
         onJoin(newRoomId, name, true); // true = isHost
     };
 
     const handleSetMode = (mode) => {
         setSelectedMode(mode);
-        // This is the initial lobby, we don't need to emit SET_GAME_MODE yet.
-        // The mode will be passed in handleCreate.
     };
 
     const handleJoin = () => {
         if (!name) { setError('请输入您的名字'); return; }
         if (!roomId) { setError('请输入房间 ID'); return; }
-        socket.emit('join_room', { roomId, playerName: name });
+        socket.emit('join_room', {
+            roomId,
+            playerName: name,
+            userId: myInfo.userId
+        });
         onJoin(roomId, name, false);
+    };
+
+    const handleResume = () => {
+        if (!activeSession) return;
+        socket.emit('join_room', {
+            roomId: activeSession.roomId,
+            playerName: activeSession.playerName,
+            userId: myInfo.userId
+        });
+        onJoin(activeSession.roomId, activeSession.playerName, false);
     };
 
     return (
@@ -47,13 +64,39 @@ const Lobby = ({ socket, onJoin, gameMode, leaderboard }) => {
 
                 {error && <p style={{ color: '#ef4444', marginBottom: '15px', fontWeight: 'bold' }}>{error}</p>}
 
-                <div style={{ marginBottom: '30px' }}>
+                <div style={{ marginBottom: '30px', position: 'relative' }}>
                     <input
                         value={name}
                         onChange={e => setName(e.target.value)}
                         placeholder="输入您的名字开始探险..."
                         style={{ padding: '15px', width: '100%', textAlign: 'center', fontSize: '1.2rem' }}
                     />
+
+                    {activeSession && (
+                        <div style={{
+                            marginTop: '15px',
+                            background: 'rgba(251, 191, 36, 0.15)',
+                            border: '1px solid #fbbf24',
+                            borderRadius: '12px',
+                            padding: '15px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            animation: 'pulse 2s infinite'
+                        }}>
+                            <div style={{ textAlign: 'left' }}>
+                                <div style={{ fontSize: '0.8rem', color: '#fbbf24', fontWeight: 'bold' }}>发现未结束的探险！</div>
+                                <div style={{ fontSize: '1rem', color: '#fff' }}>房间: <span style={{ fontWeight: 'bold' }}>{activeSession.roomId}</span> (角色: {activeSession.playerName})</div>
+                            </div>
+                            <button
+                                className="btn-gold"
+                                style={{ padding: '8px 20px', fontSize: '0.9rem' }}
+                                onClick={handleResume}
+                            >
+                                恢复探险
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 <div className="lobby-grid">
